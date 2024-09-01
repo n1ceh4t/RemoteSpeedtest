@@ -1,5 +1,5 @@
 # RemoteSpeedtest
-Client/Server with low executable size utilizing speedtest-cli to check network and machine statistics on remote workstations. Returns data as a json string.
+Client/Server utilizing speedtest-cli to check network and machine statistics on remote workstations. Returns data as a json string.
 # USE AT YOUR OWN RISK.
 uses: 
   + https://github.com/elnormous/HTTPRequest (for http requests)
