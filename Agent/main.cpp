@@ -18,8 +18,8 @@
 #define popen _popen
 #endif
 
-std::string host = "http://62.72.0.151:3000"; // address of the middleware. Domain names supported
-std::string speedtest_url = "http://62.72.0.151:3000/speedtest.exe"; // address of the speedtest executable (todo, may trip antivirus. Look into bundling executable?)
+std::string host = "http://127.0.0.1:3000"; // address of the middleware. Domain names supported
+std::string speedtest_url = "http://127.0.0.1:3000/speedtest.exe"; // address of the speedtest executable (todo, may trip antivirus. Look into bundling executable?)
 
 std::string get_speedtest(std::string CWD) {
   http::Request request(speedtest_url); // build request
