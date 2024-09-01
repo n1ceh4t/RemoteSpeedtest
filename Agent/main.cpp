@@ -14,8 +14,12 @@
 
 #include <fstream>
 
-std::string host = "http://127.0.0.1:3000"; // address of the middleware. Domain names supported
-std::string speedtest_url = "http://127.0.0.1:3000/speedtest.exe"; // address of the speedtest executable (todo, may trip antivirus. Look into bundling executable?)
+#if WINDOWS
+#define popen _popen
+#endif
+
+std::string host = "http://62.72.0.151:3000"; // address of the middleware. Domain names supported
+std::string speedtest_url = "http://62.72.0.151:3000/speedtest.exe"; // address of the speedtest executable (todo, may trip antivirus. Look into bundling executable?)
 
 std::string get_speedtest(std::string CWD) {
   http::Request request(speedtest_url); // build request
@@ -98,7 +102,7 @@ const std::string runcmd(std::string cmd) {
 
 std::string speedtest(std::string CWD) {
   // powershell echo YES | speedtest.exe -f json // working auto-accept EULA for speedtest, working with json output for external network statistics. tested with windows 10.
-  std::string EXTERNAL_NETWORK_STATS = runcmd("powershell cd " + CWD + " && echo yes | ./speedtest.exe -f json"); // need to change to current working directory inside of powershell, then execute speedtest.exe
+  std::string EXTERNAL_NETWORK_STATS = runcmd("powershell cd " + CWD + " && echo yes | speedtest.exe -f json"); // need to change to current working directory inside of powershell, then execute speedtest.exe
   std::string err = "error"; // for error checking
   if (EXTERNAL_NETWORK_STATS.find(err) != std::string::npos) { // check if output of speedtest.exe includes "error"
     return "error"; // if so, return precise error string
@@ -109,11 +113,8 @@ std::string speedtest(std::string CWD) {
 
 int main(int argc,
   const char * argv[]) {
-  // cygwin prefixes the current working directory. We need to fix that in order to run speedtest. Will likely require different workarounds for different compilers.
-  std::string CWDFIX = "C:";
-  std::string CWD = std::string(std::filesystem::current_path()); // casts std::filesystem::path to a string, this is prefixed and will be modified below
-  CWD.erase(0, 11); // removes the prefix
-  CWD.insert(0, CWDFIX); // fixes path by adding CWDFIX (C:/) to the beginning of the string (e.g. C:/Users/John/). Could use a better implementation, but generally should work.
+
+  std::string CWD = std::filesystem::current_path().generic_string(); // casts std::filesystem::path to a string, this is prefixed and will be modified below
   
   if (check_speedtest(CWD) == 0) 
   {
@@ -136,7 +137,7 @@ int main(int argc,
     
     while (EXTERNAL_NETWORK_STATS == "error") { // error handling for speedtest, if speedtest does not return an error, we skip this.
       FAILED_CONNECTIONS++; // maybe should be a seperate counter for failed speedtest runs vs failed to post data to server, but this is fine for now.
-      sleep(HELLO_INTERVAL); // utilize this to allow some time if speedtest fails (unknown impact)
+      Sleep(HELLO_INTERVAL); // utilize this to allow some time if speedtest fails (unknown impact)
       EXTERNAL_NETWORK_STATS = speedtest(CWD); // we try again
 
       if (EXTERNAL_NETWORK_STATS != "error") { // if speedtest() does not return an error, we can break the loop and send the request. 
@@ -146,10 +147,10 @@ int main(int argc,
       }
     }
 
-    sleep(HELLO_INTERVAL); // now that we have valid data to send, we wait the minimum time before continuing.
+    Sleep(HELLO_INTERVAL); // now that we have valid data to send, we wait the minimum time before continuing.
 
     if (FAILED_CONNECTIONS > MAX_FAILED_CONNECTIONS) { // if it has failed more than the allowed number of times...
-      sleep(IDLE_TIME); // we sleep for the idle time, no need to try for awhile. Something is wrong.
+      Sleep(IDLE_TIME); // we sleep for the idle time, no need to try for awhile. Something is wrong.
     }
 
     std::string hel = server_hello(SYSTEMINFO, std::string(base64::to_base64(EXTERNAL_NETWORK_STATS)),CURRENT_TIME); // speedtest output has been validated, we can now encode/cast it while passing to server_hello()
