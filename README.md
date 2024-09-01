@@ -12,7 +12,11 @@ usage:
   You can edit the addresses in main.cpp for the agent.
   I recommend using cygwin's g++ compiler, as in main.cpp there are workarounds for how cygwin handles paths.
   The code itself is heavily commented, so everything should be pretty self-explanatory.
-  This software comes with no guarantees:
+  This software comes with no guarantees.
+
+  Compiled using x86_64-w64-mingw32-g++ (from cygwin)
+    C:/>x86_64-w64-mingw32-g++ main.cpp -static -o main.exe -lwsock32 -lWs2_32
+  
   
   # USE AT YOUR OWN RISK.
   
