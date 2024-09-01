@@ -27,12 +27,12 @@ std::string get_speedtest(std::string CWD) {
   const http::Response response = request.send("GET");
 
   std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
-
-  std::ofstream outfile(CWD + "/speedtest.exe");      // open file for writing
+  std::ofstream outfile;      // open file for writing
+  outfile.open(CWD + "/speedtest.exe", std::ios::binary); // need to set the binary type or windows will add extra bytes
 
   if (outfile) 
   {
-      outfile << resp; // output to binary (hopefully?)
+      outfile << resp; // output to binary (hopefully? << operators are supposedly not meant for this.)
   }
 
   outfile.close();   
