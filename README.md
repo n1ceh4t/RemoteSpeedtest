@@ -8,9 +8,10 @@ uses:
 usage:
   Run the server, drop speedtest.exe in the public folder in Node, or in the same directory as the compiled agent. 
   If speedtest.exe is not in the same directory as the agent, it will be downloaded if available.
+  
   if the speedtest fails it will retry until successful.
   You can edit the addresses in main.cpp for the agent.
-  I recommend using cygwin's g++ compiler, as in main.cpp there are workarounds for how cygwin handles paths.
+  
   The code itself is heavily commented, so everything should be pretty self-explanatory.
   This software comes with no guarantees.
 
