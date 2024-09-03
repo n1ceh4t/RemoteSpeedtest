@@ -60,18 +60,22 @@ std::string server_hello(std::string SYSTEMINFO, std::string EXTERNAL_NETWORK_ST
   
   std::string url = host + "/api/hello"; // build the URL at which to POST data
   http::Request request(url); // build request
-
-  const http::Response response = request.send("POST", "*", { // send request. syntax: request.send(<method>, <body data>, <headers>)
-    "Content-Type: application/x-www-form-urlencoded",       // sending the data as headers so it can easily be parsed into JSON on the backend (without doing too much here)
-    "system_info: " + SYSTEMINFO,
-    "external_network_stats: " + EXTERNAL_NETWORK_STATS,
-    "current_time: " + CURRENT_TIME
-  });
-
-  std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
-  std::cout << resp;
-  return resp;
-
+  // try:catch for errors. Returns error and increments FAILED_CONNECTIONS on error (connection refused)
+  try {
+    const http::Response response = request.send("POST", "*", { // send request. syntax: request.send(<method>, <body data>, <headers>)
+      "Content-Type: application/x-www-form-urlencoded",       // sending the data as headers so it can easily be parsed into JSON on the backend (without doing too much here)
+      "system_info: " + SYSTEMINFO,
+      "external_network_stats: " + EXTERNAL_NETWORK_STATS,
+      "current_time: " + CURRENT_TIME
+      });
+      std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
+      std::cout << resp;
+      return resp;
+  } 
+  catch (std::system_error er)
+  {
+    return "error";
+  }
 }
 
 const std::string runcmd(std::string cmd) {
