@@ -18,37 +18,11 @@
 #define popen _popen
 #endif
 
+std::string speedtestMD5 = "d6d252bb777a18167d8e6183c0d0eefb"; // MD5 of current (windows build) speedtest-cli
+
 std::string host = "http://127.0.0.1:3000"; // address of the middleware. Domain names supported
 std::string speedtest_url = "http://127.0.0.1:3000/speedtest.exe"; // address of the speedtest executable (todo, may trip antivirus. Look into bundling executable?)
 
-std::string get_speedtest(std::string CWD) {
-  http::Request request(speedtest_url); // build request
-
-  const http::Response response = request.send("GET");
-
-  std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
-
-  std::ofstream outfile(CWD + "/speedtest.exe");      // open file for writing
-
-  if (outfile) 
-  {
-      outfile << resp; // output to binary (hopefully?)
-  }
-
-  outfile.close();   
-  return "Nice, dude.";
-}
-
-int check_speedtest(std::string CWD) {
-  if (std::filesystem::exists(CWD + "/speedtest.exe") == true)
-  {
-    return 1;
-  }
-  else
-  {
-    return 0;
-  }
-}
 
 
 int HELLO_INTERVAL = 10; // how often to gather machine info and run a speedtest
@@ -60,18 +34,22 @@ std::string server_hello(std::string SYSTEMINFO, std::string EXTERNAL_NETWORK_ST
   
   std::string url = host + "/api/hello"; // build the URL at which to POST data
   http::Request request(url); // build request
-
-  const http::Response response = request.send("POST", "*", { // send request. syntax: request.send(<method>, <body data>, <headers>)
-    "Content-Type: application/x-www-form-urlencoded",       // sending the data as headers so it can easily be parsed into JSON on the backend (without doing too much here)
-    "system_info: " + SYSTEMINFO,
-    "external_network_stats: " + EXTERNAL_NETWORK_STATS,
-    "current_time: " + CURRENT_TIME
-  });
-
-  std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
-  std::cout << resp;
-  return resp;
-
+  // try:catch for errors. Returns error and increments FAILED_CONNECTIONS on error (connection refused)
+  try {
+    const http::Response response = request.send("POST", "*", { // send request. syntax: request.send(<method>, <body data>, <headers>)
+      "Content-Type: application/x-www-form-urlencoded",       // sending the data as headers so it can easily be parsed into JSON on the backend (without doing too much here)
+      "system_info: " + SYSTEMINFO,
+      "external_network_stats: " + EXTERNAL_NETWORK_STATS,
+      "current_time: " + CURRENT_TIME
+      });
+      std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
+      std::cout << resp;
+      return resp;
+  } 
+  catch (std::system_error er)
+  {
+    return "error";
+  }
 }
 
 const std::string runcmd(std::string cmd) {
@@ -100,12 +78,48 @@ const std::string runcmd(std::string cmd) {
 
 }
 
+std::string get_speedtest(std::string CWD) {
+  http::Request request(speedtest_url); // build request
+
+  const http::Response response = request.send("GET");
+
+  std::string resp = std::string(response.body.begin(), response.body.end()); // store the response as a string to be returned
+  std::ofstream outfile;      // open file for writing
+  outfile.open(CWD + "/speedtest.exe", std::ios::binary); // need to set the binary type or windows will add extra bytes
+
+  if (outfile) 
+  {
+      outfile << resp; // output to binary (hopefully? << operators are supposedly not meant for this.)
+  }
+
+  outfile.close();   
+  return "Nice, dude.";
+}
+
+int check_speedtest(std::string CWD) { // checks if speedtest.exe is in current directory
+  if (std::filesystem::exists(CWD + "/speedtest.exe") == true) // we should do some verification here (MD5 comparison?)
+  {
+    if (runcmd("powershell cd " + CWD + "&& certutil -hashfile speedtest.exe MD5").find(speedtestMD5)) {
+      // hacky MD5 Comparison
+      return 1;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+  else
+  {
+    return 0;
+  }
+  return 0;
+}
+
 std::string speedtest(std::string CWD) {
-  // powershell echo YES | speedtest.exe -f json // working auto-accept EULA for speedtest, working with json output for external network statistics. tested with windows 10.
-  std::string EXTERNAL_NETWORK_STATS = runcmd("powershell cd " + CWD + " && echo yes | speedtest.exe -f json"); // need to change to current working directory inside of powershell, then execute speedtest.exe
+  std::string EXTERNAL_NETWORK_STATS = runcmd("powershell cd " + CWD + " && speedtest.exe -f json --accept-license"); // need to change to current working directory inside of powershell, then accept EULA execute speedtest.exe
   std::string err = "error"; // for error checking
   if (EXTERNAL_NETWORK_STATS.find(err) != std::string::npos) { // check if output of speedtest.exe includes "error"
-    return "error"; // if so, return precise error string
+    return err; // if so, return precise error string
   } else {
     return EXTERNAL_NETWORK_STATS; // else, it must have succeeded! Return network statistics.
   }
@@ -114,11 +128,11 @@ std::string speedtest(std::string CWD) {
 int main(int argc,
   const char * argv[]) {
 
-  std::string CWD = std::filesystem::current_path().generic_string(); // casts std::filesystem::path to a string, this is prefixed and will be modified below
+  std::string CWD = std::filesystem::current_path().generic_string(); // casts std::filesystem::path to a string
   
-  if (check_speedtest(CWD) == 0) 
+  if (check_speedtest(CWD) == 0) // check if speedtest.exe is in current directory (This could be done better)
   {
-    get_speedtest(CWD);
+    get_speedtest(CWD); //if not, retrieve it from the server
   } 
   else
   {
