@@ -1,5 +1,5 @@
 # RemoteSpeedtest
-Client/Server utilizing speedtest-cli to check network and machine statistics on remote workstations coded in c++ and Js. Returns data as a json string.
+Client/Server utilizing speedtest-cli to check network and machine statistics on remote workstations coded in C++ and JavaScript. Returns data as a json string.
 
 uses: 
   + https://github.com/elnormous/HTTPRequest (for http requests)
