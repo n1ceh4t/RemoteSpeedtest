@@ -32,10 +32,10 @@ std::string speedtest_url = "http://127.0.0.1:3000/speedtest.exe"; // address of
 
 
 // Sleep times are in MS
-int HELLO_INTERVAL = 100000; // how often to gather machine info and run a speedtest
-int IDLE_TIME = 720000; // after exceeding MAX_FAILED_CONNECTIONS, how long to wait before trying again
-int FAILED_CONNECTIONS = 0; // for counting concurrent failed connections (to either the middleware or the speed test server)
-int MAX_FAILED_CONNECTIONS = 10; // maximum connection attempts before switching to IDLE (Sleep(IDLE_TIME))
+const int HELLO_INTERVAL = 100000; // how often to gather machine info and run a speedtest
+const int IDLE_TIME = 720000; // after exceeding MAX_FAILED_CONNECTIONS, how long to wait before trying again
+const int FAILED_CONNECTIONS = 0; // for counting concurrent failed connections (to either the middleware or the speed test server)
+const int MAX_FAILED_CONNECTIONS = 10; // maximum connection attempts before switching to IDLE (Sleep(IDLE_TIME))
 
 const std::string runcmd(std::string cmd) { // let's get dangerous!
 
@@ -57,16 +57,18 @@ const std::string runcmd(std::string cmd) { // let's get dangerous!
     auto rc = pclose(pipe); // close the pipe at EOF
 
     return std::string { // return the output as a string
+    delete[] buffer;
       result
     };
   }
   catch (std::runtime_error er)
   {
     // logText(er.what()); // log that (*TODO*)
-    // if we can't run commands on the agent, we should report that to the server if possible                                                                     *TODO*
+    // if we can't run commands on the agent, we should report that to the server if possible 
+    delete[] buffer;                                                                    *TODO*
     return "error"; 
   }
-
+  delete[] buffer;
   return "error"; // obligatory; will not compile without this
 }
 
@@ -217,6 +219,7 @@ int main(int argc,
       EXTERNAL_NETWORK_STATS = speedtest(); // we try again
 
       if (EXTERNAL_NETWORK_STATS != "error") { // if speedtest() does not return an error, we can break the loop and send the request.
+        
         break; // break the loop and send the request
       } else { // if we get another error, we keep looping until it is successful.
         logText(EXTERNAL_NETWORK_STATS);
@@ -232,8 +235,8 @@ int main(int argc,
       Sleep(HELLO_INTERVAL); // now that we have valid data from speedtest to send, we wait the minimum time before continuing.
     }
 
-    EXTERNAL_NETWORK_STATS = std::string(base64::to_base64(EXTERNAL_NETWORK_STATS)); // speedtest output has been validated, we can now encode->cast it 
-    std::string hel = server_hello(SYSTEMINFO, EXTERNAL_NETWORK_STATS, CURRENT_TIME); // pass collected data to server_hello() and return response as string
+    std::string SPEEDTEST_ENCODED = std::string(base64::to_base64(EXTERNAL_NETWORK_STATS)); // speedtest output has been validated, we can now encode->cast it 
+    std::string hel = server_hello(SYSTEMINFO, SPEEDTEST_ENCODED, CURRENT_TIME); // pass collected data to server_hello() and return response as string
     
     // check the server's response
     if (hel == "*") { // valid response from the server, success!
