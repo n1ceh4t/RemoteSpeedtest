@@ -2,7 +2,7 @@
 //                                    Remote-Speedtest                                       //
 //                                   TODO: auto-updater,                                     //
 //                      We can also determine DNS failure with some checks(?)                //
-//                      Additionally, use this to collect user feedback(?)                   //
+//                                                                                           //
 //-------------------------------------------------------------------------------------------//
 
 #include <iostream>
@@ -57,7 +57,7 @@ const std::string runcmd(std::string cmd) { // let's get dangerous!
     auto rc = pclose(pipe); // close the pipe at EOF
 
     return std::string { // return the output as a string
-    delete[] buffer;
+    delete[] buffer; // delete that buffer
       result
     };
   }
@@ -65,10 +65,10 @@ const std::string runcmd(std::string cmd) { // let's get dangerous!
   {
     // logText(er.what()); // log that (*TODO*)
     // if we can't run commands on the agent, we should report that to the server if possible 
-    delete[] buffer;                                                                    *TODO*
+    delete[] buffer; //DELETE THAT BUFFER                                                                    *TODO*
     return "error"; 
   }
-  delete[] buffer;
+  delete[] buffer; // DeLeTE tHaT bUfFeR
   return "error"; // obligatory; will not compile without this
 }
 
